@@ -53,6 +53,80 @@ export type Database = {
           },
         ]
       }
+      mission_expenses: {
+        Row: {
+          accommodation_days: number | null
+          accommodation_total: number | null
+          accommodation_unit_price: number | null
+          created_at: string
+          fuel_quantity: number | null
+          fuel_total: number | null
+          fuel_unit_price: number | null
+          id: string
+          mission_id: string
+          other_expenses: number | null
+          other_expenses_description: string | null
+          per_diem_days: number | null
+          per_diem_rate: number | null
+          per_diem_total: number | null
+          transport_distance: number | null
+          transport_total: number | null
+          transport_type: string | null
+          transport_unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          accommodation_days?: number | null
+          accommodation_total?: number | null
+          accommodation_unit_price?: number | null
+          created_at?: string
+          fuel_quantity?: number | null
+          fuel_total?: number | null
+          fuel_unit_price?: number | null
+          id?: string
+          mission_id: string
+          other_expenses?: number | null
+          other_expenses_description?: string | null
+          per_diem_days?: number | null
+          per_diem_rate?: number | null
+          per_diem_total?: number | null
+          transport_distance?: number | null
+          transport_total?: number | null
+          transport_type?: string | null
+          transport_unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          accommodation_days?: number | null
+          accommodation_total?: number | null
+          accommodation_unit_price?: number | null
+          created_at?: string
+          fuel_quantity?: number | null
+          fuel_total?: number | null
+          fuel_unit_price?: number | null
+          id?: string
+          mission_id?: string
+          other_expenses?: number | null
+          other_expenses_description?: string | null
+          per_diem_days?: number | null
+          per_diem_rate?: number | null
+          per_diem_total?: number | null
+          transport_distance?: number | null
+          transport_total?: number | null
+          transport_type?: string | null
+          transport_unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_expenses_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "mission_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mission_orders: {
         Row: {
           actual_amount: number | null

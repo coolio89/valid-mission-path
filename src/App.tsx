@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import NewMission from "./pages/NewMission";
 import Profile from "./pages/Profile";
 import MissionDetail from "./pages/MissionDetail";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MissionDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <Admin />
                 </ProtectedRoute>
               }
             />

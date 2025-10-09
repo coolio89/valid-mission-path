@@ -1,8 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { FileText, Home, Plus, LogOut, User } from "lucide-react";
+import { FileText, Home, Plus, LogOut, User, Shield } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,11 +13,34 @@ export default function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkAdminStatus();
+    }
+  }, [user]);
+
+  const checkAdminStatus = async () => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user?.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      
+      setIsAdmin(!!data);
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+    }
+  };
 
   const navItems = [
     { icon: Home, label: "Tableau de bord", path: "/" },
     { icon: Plus, label: "Nouveau bon", path: "/new-mission" },
     { icon: User, label: "Profil", path: "/profile" },
+    ...(isAdmin ? [{ icon: Shield, label: "Administration", path: "/admin" }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;

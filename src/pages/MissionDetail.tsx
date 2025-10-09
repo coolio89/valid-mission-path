@@ -28,6 +28,24 @@ interface Mission {
   agent_id: string;
 }
 
+interface MissionExpense {
+  accommodation_days: number;
+  accommodation_unit_price: number;
+  accommodation_total: number;
+  per_diem_days: number;
+  per_diem_rate: number;
+  per_diem_total: number;
+  transport_type: string | null;
+  transport_distance: number;
+  transport_unit_price: number;
+  transport_total: number;
+  fuel_quantity: number;
+  fuel_unit_price: number;
+  fuel_total: number;
+  other_expenses: number;
+  other_expenses_description: string | null;
+}
+
 interface Signature {
   id: string;
   signer_role: string;
@@ -57,6 +75,7 @@ const roleLabels: Record<string, string> = {
 
 export default function MissionDetail() {
   const [mission, setMission] = useState<Mission | null>(null);
+  const [expenses, setExpenses] = useState<MissionExpense | null>(null);
   const [signatures, setSignatures] = useState<Signature[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [comment, setComment] = useState("");
@@ -91,6 +110,15 @@ export default function MissionDetail() {
 
       if (missionError) throw missionError;
       setMission(missionData);
+
+      // Fetch expenses
+      const { data: expensesData } = await supabase
+        .from("mission_expenses")
+        .select("*")
+        .eq("mission_id", id)
+        .maybeSingle();
+
+      setExpenses(expensesData);
 
       const { data: signaturesData, error: signaturesError } = await supabase
         .from("mission_signatures")
@@ -293,6 +321,91 @@ export default function MissionDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Expenses Detail */}
+          {expenses && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Détail des frais</CardTitle>
+                <CardDescription>
+                  Décomposition du montant estimé
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {expenses.accommodation_days > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">Hébergement</p>
+                      <p className="text-sm text-muted-foreground">
+                        {expenses.accommodation_days} nuits × {expenses.accommodation_unit_price.toFixed(2)} €
+                      </p>
+                    </div>
+                    <p className="font-semibold">{expenses.accommodation_total.toFixed(2)} €</p>
+                  </div>
+                )}
+
+                {expenses.per_diem_days > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">Indemnités journalières</p>
+                      <p className="text-sm text-muted-foreground">
+                        {expenses.per_diem_days} jours × {expenses.per_diem_rate.toFixed(2)} €
+                      </p>
+                    </div>
+                    <p className="font-semibold">{expenses.per_diem_total.toFixed(2)} €</p>
+                  </div>
+                )}
+
+                {expenses.transport_distance > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">Transport</p>
+                      <p className="text-sm text-muted-foreground">
+                        {expenses.transport_type && `${expenses.transport_type} - `}
+                        {expenses.transport_distance} km × {expenses.transport_unit_price.toFixed(2)} €
+                      </p>
+                    </div>
+                    <p className="font-semibold">{expenses.transport_total.toFixed(2)} €</p>
+                  </div>
+                )}
+
+                {expenses.fuel_quantity > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">Carburant</p>
+                      <p className="text-sm text-muted-foreground">
+                        {expenses.fuel_quantity} L × {expenses.fuel_unit_price.toFixed(2)} €
+                      </p>
+                    </div>
+                    <p className="font-semibold">{expenses.fuel_total.toFixed(2)} €</p>
+                  </div>
+                )}
+
+                {expenses.other_expenses > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">Autres frais</p>
+                      {expenses.other_expenses_description && (
+                        <p className="text-sm text-muted-foreground">
+                          {expenses.other_expenses_description}
+                        </p>
+                      )}
+                    </div>
+                    <p className="font-semibold">{expenses.other_expenses.toFixed(2)} €</p>
+                  </div>
+                )}
+
+                <div className="pt-3 border-t">
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-bold">Total</p>
+                    <p className="text-xl font-bold text-primary">
+                      {mission.estimated_amount.toFixed(2)} €
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Workflow */}
           <Card>

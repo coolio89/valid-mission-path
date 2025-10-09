@@ -19,10 +19,33 @@ export default function NewMission() {
     destination: "",
     start_date: "",
     end_date: "",
-    estimated_amount: "",
+  });
+
+  const [expenses, setExpenses] = useState({
+    accommodation_days: "",
+    accommodation_unit_price: "",
+    per_diem_days: "",
+    per_diem_rate: "",
+    transport_type: "",
+    transport_distance: "",
+    transport_unit_price: "",
+    fuel_quantity: "",
+    fuel_unit_price: "",
+    other_expenses: "",
+    other_expenses_description: "",
   });
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Calculate total estimated amount
+  const calculateTotal = () => {
+    const accommodation = (parseFloat(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0);
+    const perDiem = (parseFloat(expenses.per_diem_days) || 0) * (parseFloat(expenses.per_diem_rate) || 0);
+    const transport = (parseFloat(expenses.transport_distance) || 0) * (parseFloat(expenses.transport_unit_price) || 0);
+    const fuel = (parseFloat(expenses.fuel_quantity) || 0) * (parseFloat(expenses.fuel_unit_price) || 0);
+    const other = parseFloat(expenses.other_expenses) || 0;
+    return accommodation + perDiem + transport + fuel + other;
+  };
 
   const handleSubmit = async (e: React.FormEvent, submitType: "draft" | "submit") => {
     e.preventDefault();
@@ -44,20 +67,46 @@ export default function NewMission() {
 
       if (refError) throw refError;
 
-      // Create mission
-      const { error } = await supabase.from("mission_orders").insert({
-        reference: refData,
-        agent_id: profile.id,
-        title: formData.title,
-        description: formData.description,
-        destination: formData.destination,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        estimated_amount: parseFloat(formData.estimated_amount),
-        status: submitType === "draft" ? "draft" : "pending_service",
-      });
+      const estimatedAmount = calculateTotal();
 
-      if (error) throw error;
+      // Create mission
+      const { data: missionData, error: missionError } = await supabase
+        .from("mission_orders")
+        .insert({
+          reference: refData,
+          agent_id: profile.id,
+          title: formData.title,
+          description: formData.description,
+          destination: formData.destination,
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          estimated_amount: estimatedAmount,
+          status: submitType === "draft" ? "draft" : "pending_service",
+        })
+        .select()
+        .single();
+
+      if (missionError) throw missionError;
+
+      // Create expenses detail
+      const { error: expensesError } = await supabase
+        .from("mission_expenses")
+        .insert({
+          mission_id: missionData.id,
+          accommodation_days: parseInt(expenses.accommodation_days) || 0,
+          accommodation_unit_price: parseFloat(expenses.accommodation_unit_price) || 0,
+          per_diem_days: parseInt(expenses.per_diem_days) || 0,
+          per_diem_rate: parseFloat(expenses.per_diem_rate) || 0,
+          transport_type: expenses.transport_type || null,
+          transport_distance: parseFloat(expenses.transport_distance) || 0,
+          transport_unit_price: parseFloat(expenses.transport_unit_price) || 0,
+          fuel_quantity: parseFloat(expenses.fuel_quantity) || 0,
+          fuel_unit_price: parseFloat(expenses.fuel_unit_price) || 0,
+          other_expenses: parseFloat(expenses.other_expenses) || 0,
+          other_expenses_description: expenses.other_expenses_description || null,
+        });
+
+      if (expensesError) throw expensesError;
 
       toast.success(
         submitType === "draft"
@@ -76,6 +125,12 @@ export default function NewMission() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleExpenseChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setExpenses({ ...expenses, [e.target.name]: e.target.value });
   };
 
   return (
@@ -161,18 +216,194 @@ export default function NewMission() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="estimated_amount">Montant estimé (€) *</Label>
-                <Input
-                  id="estimated_amount"
-                  name="estimated_amount"
-                  type="number"
-                  step="0.01"
-                  value={formData.estimated_amount}
-                  onChange={handleChange}
-                  placeholder="1500.00"
-                  required
-                />
+              {/* Accommodation */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold text-sm">Hébergement</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accommodation_days">Nombre de nuits</Label>
+                    <Input
+                      id="accommodation_days"
+                      name="accommodation_days"
+                      type="number"
+                      value={expenses.accommodation_days}
+                      onChange={handleExpenseChange}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accommodation_unit_price">Prix par nuit (€)</Label>
+                    <Input
+                      id="accommodation_unit_price"
+                      name="accommodation_unit_price"
+                      type="number"
+                      step="0.01"
+                      value={expenses.accommodation_unit_price}
+                      onChange={handleExpenseChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                {expenses.accommodation_days && expenses.accommodation_unit_price && (
+                  <p className="text-sm text-muted-foreground">
+                    Total hébergement: {((parseFloat(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0)).toFixed(2)} €
+                  </p>
+                )}
+              </div>
+
+              {/* Per Diem */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold text-sm">Indemnités journalières</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="per_diem_days">Nombre de jours</Label>
+                    <Input
+                      id="per_diem_days"
+                      name="per_diem_days"
+                      type="number"
+                      value={expenses.per_diem_days}
+                      onChange={handleExpenseChange}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="per_diem_rate">Taux journalier (€)</Label>
+                    <Input
+                      id="per_diem_rate"
+                      name="per_diem_rate"
+                      type="number"
+                      step="0.01"
+                      value={expenses.per_diem_rate}
+                      onChange={handleExpenseChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                {expenses.per_diem_days && expenses.per_diem_rate && (
+                  <p className="text-sm text-muted-foreground">
+                    Total indemnités: {((parseFloat(expenses.per_diem_days) || 0) * (parseFloat(expenses.per_diem_rate) || 0)).toFixed(2)} €
+                  </p>
+                )}
+              </div>
+
+              {/* Transport */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold text-sm">Transport</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="transport_type">Type de transport</Label>
+                  <Input
+                    id="transport_type"
+                    name="transport_type"
+                    value={expenses.transport_type}
+                    onChange={handleExpenseChange}
+                    placeholder="Véhicule personnel, train, avion..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="transport_distance">Distance (km)</Label>
+                    <Input
+                      id="transport_distance"
+                      name="transport_distance"
+                      type="number"
+                      step="0.01"
+                      value={expenses.transport_distance}
+                      onChange={handleExpenseChange}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="transport_unit_price">Prix/km (€)</Label>
+                    <Input
+                      id="transport_unit_price"
+                      name="transport_unit_price"
+                      type="number"
+                      step="0.01"
+                      value={expenses.transport_unit_price}
+                      onChange={handleExpenseChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                {expenses.transport_distance && expenses.transport_unit_price && (
+                  <p className="text-sm text-muted-foreground">
+                    Total transport: {((parseFloat(expenses.transport_distance) || 0) * (parseFloat(expenses.transport_unit_price) || 0)).toFixed(2)} €
+                  </p>
+                )}
+              </div>
+
+              {/* Fuel */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold text-sm">Carburant</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fuel_quantity">Quantité (litres)</Label>
+                    <Input
+                      id="fuel_quantity"
+                      name="fuel_quantity"
+                      type="number"
+                      step="0.01"
+                      value={expenses.fuel_quantity}
+                      onChange={handleExpenseChange}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fuel_unit_price">Prix/litre (€)</Label>
+                    <Input
+                      id="fuel_unit_price"
+                      name="fuel_unit_price"
+                      type="number"
+                      step="0.01"
+                      value={expenses.fuel_unit_price}
+                      onChange={handleExpenseChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                {expenses.fuel_quantity && expenses.fuel_unit_price && (
+                  <p className="text-sm text-muted-foreground">
+                    Total carburant: {((parseFloat(expenses.fuel_quantity) || 0) * (parseFloat(expenses.fuel_unit_price) || 0)).toFixed(2)} €
+                  </p>
+                )}
+              </div>
+
+              {/* Other Expenses */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold text-sm">Autres frais</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="other_expenses">Montant (€)</Label>
+                  <Input
+                    id="other_expenses"
+                    name="other_expenses"
+                    type="number"
+                    step="0.01"
+                    value={expenses.other_expenses}
+                    onChange={handleExpenseChange}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="other_expenses_description">Description</Label>
+                  <Textarea
+                    id="other_expenses_description"
+                    name="other_expenses_description"
+                    value={expenses.other_expenses_description}
+                    onChange={handleExpenseChange}
+                    placeholder="Péages, parking, repas..."
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">Montant total estimé</span>
+                  <span className="text-2xl font-bold text-primary">
+                    {calculateTotal().toFixed(2)} €
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">

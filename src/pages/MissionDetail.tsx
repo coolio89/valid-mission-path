@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, User } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, User, Download, Users } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { generateMissionPDF } from "@/utils/missionPdf";
 
 interface Mission {
   id: string;
@@ -81,6 +82,7 @@ export default function MissionDetail() {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [missionAgents, setMissionAgents] = useState<any[]>([]);
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -89,8 +91,32 @@ export default function MissionDetail() {
     if (id && user) {
       fetchMissionData();
       fetchUserRoles();
+      fetchMissionAgents();
     }
   }, [id, user]);
+
+  const fetchMissionAgents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("mission_agents")
+        .select(`
+          *,
+          profiles:agent_id (
+            id,
+            full_name,
+            email,
+            department
+          )
+        `)
+        .eq("mission_id", id)
+        .order("is_primary", { ascending: false });
+      
+      if (error) throw error;
+      setMissionAgents(data || []);
+    } catch (error: any) {
+      console.error("Erreur lors du chargement des agents:", error);
+    }
+  };
 
   const fetchUserRoles = async () => {
     const { data } = await supabase
@@ -261,10 +287,21 @@ export default function MissionDetail() {
   return (
     <Layout>
       <div className="p-8 max-w-5xl mx-auto">
-        <Button variant="ghost" className="mb-6" onClick={() => navigate("/")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour au tableau de bord
-        </Button>
+        <div className="flex gap-2 mb-6">
+          <Button variant="ghost" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour au tableau de bord
+          </Button>
+          {mission?.status !== 'draft' && expenses && (
+            <Button
+              onClick={() => generateMissionPDF(mission, expenses, missionAgents.map(ma => ma.profiles))}
+              variant="default"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Générer l'ordre de mission
+            </Button>
+          )}
+        </div>
 
         <div className="space-y-6">
           {/* Mission Info */}
@@ -286,7 +323,7 @@ export default function MissionDetail() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-semibold mb-1">Destination</h3>
                   <p className="text-muted-foreground">{mission.destination}</p>
@@ -297,6 +334,35 @@ export default function MissionDetail() {
                     {mission.estimated_amount.toLocaleString("fr-FR")} €
                   </p>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Agents participants
+                </h3>
+                {missionAgents.length > 0 ? (
+                  <ul className="space-y-1">
+                    {missionAgents.map((ma) => (
+                      <li key={ma.id} className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span>
+                          {ma.profiles?.full_name}
+                          {ma.is_primary && (
+                            <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              Principal
+                            </span>
+                          )}
+                        </span>
+                        {ma.profiles?.department && (
+                          <span className="text-xs">({ma.profiles.department})</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">Aucun agent supplémentaire</p>
+                )}
                 <div>
                   <h3 className="font-semibold mb-1">Date de début</h3>
                   <p className="text-muted-foreground">

@@ -10,6 +10,7 @@ import NewMission from "./pages/NewMission";
 import Profile from "./pages/Profile";
 import MissionDetail from "./pages/MissionDetail";
 import Admin from "./pages/Admin";
+import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <Projects />
                 </ProtectedRoute>
               }
             />

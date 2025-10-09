@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function NewMission() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +27,12 @@ export default function NewMission() {
     destination: "",
     start_date: "",
     end_date: "",
+    project_id: "",
   });
+  
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
 
   const [expenses, setExpenses] = useState({
     accommodation_days: "",
@@ -37,6 +50,58 @@ export default function NewMission() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    loadProjectsAndAgents();
+    loadDefaultRates();
+  }, [user]);
+
+  const loadProjectsAndAgents = async () => {
+    try {
+      const [projectsRes, agentsRes] = await Promise.all([
+        supabase.from("projects").select("*").eq("status", "active"),
+        supabase.from("profiles").select("id, full_name, email, department")
+      ]);
+      
+      if (projectsRes.data) setProjects(projectsRes.data);
+      if (agentsRes.data) setAgents(agentsRes.data);
+    } catch (error: any) {
+      toast.error("Erreur lors du chargement des données");
+    }
+  };
+
+  const loadDefaultRates = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: userRoles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (userRoles) {
+        const { data: rates } = await supabase
+          .from("role_rates")
+          .select("*")
+          .eq("role", userRoles.role)
+          .order("effective_from", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (rates) {
+          setExpenses(prev => ({
+            ...prev,
+            per_diem_rate: rates.per_diem_rate.toString(),
+            accommodation_unit_price: rates.accommodation_rate.toString(),
+            transport_unit_price: rates.transport_rate.toString(),
+          }));
+        }
+      }
+    } catch (error: any) {
+      console.log("Erreur lors du chargement des tarifs:", error);
+    }
+  };
+
   // Calculate total estimated amount
   const calculateTotal = () => {
     const accommodation = (parseFloat(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0);
@@ -49,6 +114,12 @@ export default function NewMission() {
 
   const handleSubmit = async (e: React.FormEvent, submitType: "draft" | "submit") => {
     e.preventDefault();
+    
+    if (selectedAgents.length === 0) {
+      toast.error("Veuillez sélectionner au moins un agent");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -81,12 +152,26 @@ export default function NewMission() {
           start_date: formData.start_date,
           end_date: formData.end_date,
           estimated_amount: estimatedAmount,
+          project_id: formData.project_id || null,
           status: submitType === "draft" ? "draft" : "pending_service",
         })
         .select()
         .single();
 
       if (missionError) throw missionError;
+
+      // Insert mission agents
+      const missionAgentsInserts = selectedAgents.map((agentId, index) => ({
+        mission_id: missionData.id,
+        agent_id: agentId,
+        is_primary: index === 0,
+      }));
+      
+      const { error: agentsError } = await supabase
+        .from("mission_agents")
+        .insert(missionAgentsInserts);
+      
+      if (agentsError) throw agentsError;
 
       // Create expenses detail
       const { error: expensesError } = await supabase
@@ -104,6 +189,10 @@ export default function NewMission() {
           fuel_unit_price: parseFloat(expenses.fuel_unit_price) || 0,
           other_expenses: parseFloat(expenses.other_expenses) || 0,
           other_expenses_description: expenses.other_expenses_description || null,
+          accommodation_total: (parseInt(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0),
+          per_diem_total: (parseInt(expenses.per_diem_days) || 0) * (parseFloat(expenses.per_diem_rate) || 0),
+          transport_total: (parseFloat(expenses.transport_distance) || 0) * (parseFloat(expenses.transport_unit_price) || 0),
+          fuel_total: (parseFloat(expenses.fuel_quantity) || 0) * (parseFloat(expenses.fuel_unit_price) || 0),
         });
 
       if (expensesError) throw expensesError;
@@ -188,6 +277,56 @@ export default function NewMission() {
                   placeholder="Paris, France"
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="project">Projet (optionnel)</Label>
+                <Select
+                  value={formData.project_id}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, project_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un projet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name} ({project.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Agents participants *</Label>
+                <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto bg-muted/30">
+                  {agents.map((agent) => (
+                    <div key={agent.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`agent-${agent.id}`}
+                        checked={selectedAgents.includes(agent.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedAgents([...selectedAgents, agent.id]);
+                          } else {
+                            setSelectedAgents(selectedAgents.filter(id => id !== agent.id));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`agent-${agent.id}`} className="cursor-pointer flex-1 font-normal">
+                        {agent.full_name} {agent.department && `- ${agent.department}`}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {selectedAgents.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedAgents.length} agent(s) sélectionné(s)
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

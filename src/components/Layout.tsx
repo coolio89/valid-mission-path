@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { FileText, Home, Plus, LogOut, User, Shield } from "lucide-react";
+import { FileText, Home, Plus, LogOut, User, Shield, FolderOpen } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -39,6 +39,7 @@ export default function Layout({ children }: LayoutProps) {
   const navItems = [
     { icon: Home, label: "Tableau de bord", path: "/" },
     { icon: Plus, label: "Nouveau bon", path: "/new-mission" },
+    { icon: FolderOpen, label: "Projets", path: "/projects" },
     { icon: User, label: "Profil", path: "/profile" },
     ...(isAdmin ? [{ icon: Shield, label: "Administration", path: "/admin" }] : []),
   ];

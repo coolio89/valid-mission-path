@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      mission_agents: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          mission_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          mission_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          mission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_agents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_agents_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "mission_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mission_comments: {
         Row: {
           comment: string
@@ -138,6 +177,7 @@ export type Database = {
           estimated_amount: number
           id: string
           payment_date: string | null
+          project_id: string | null
           reference: string
           rejection_reason: string | null
           start_date: string
@@ -155,6 +195,7 @@ export type Database = {
           estimated_amount: number
           id?: string
           payment_date?: string | null
+          project_id?: string | null
           reference: string
           rejection_reason?: string | null
           start_date: string
@@ -172,6 +213,7 @@ export type Database = {
           estimated_amount?: number
           id?: string
           payment_date?: string | null
+          project_id?: string | null
           reference?: string
           rejection_reason?: string | null
           start_date?: string
@@ -185,6 +227,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -260,6 +309,95 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          spent_budget: number
+          start_date: string | null
+          status: string | null
+          total_budget: number
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          spent_budget?: number
+          start_date?: string | null
+          status?: string | null
+          total_budget?: number
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          spent_budget?: number
+          start_date?: string | null
+          status?: string | null
+          total_budget?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_rates: {
+        Row: {
+          accommodation_rate: number
+          created_at: string | null
+          effective_from: string
+          effective_until: string | null
+          id: string
+          per_diem_rate: number
+          role: Database["public"]["Enums"]["app_role"]
+          transport_rate: number
+          updated_at: string | null
+        }
+        Insert: {
+          accommodation_rate?: number
+          created_at?: string | null
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          per_diem_rate?: number
+          role: Database["public"]["Enums"]["app_role"]
+          transport_rate?: number
+          updated_at?: string | null
+        }
+        Update: {
+          accommodation_rate?: number
+          created_at?: string | null
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          per_diem_rate?: number
+          role?: Database["public"]["Enums"]["app_role"]
+          transport_rate?: number
           updated_at?: string | null
         }
         Relationships: []

@@ -1,18 +1,32 @@
 import { ReactNode, useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { FileText, Home, Plus, LogOut, User, Shield, FolderOpen } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarHeader,
+  SidebarFooter,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
+function AppSidebar() {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
+  const { open } = useSidebar();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -47,63 +61,81 @@ export default function Layout({ children }: LayoutProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
-        <div className="p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <FileText className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center gap-3 p-2">
+          <div className="h-10 w-10 rounded-lg bg-sidebar-primary flex items-center justify-center">
+            <FileText className="h-5 w-5 text-sidebar-primary-foreground" />
+          </div>
+          {open && (
             <div>
               <h1 className="font-bold text-lg">Bons de Mission</h1>
               <p className="text-xs text-sidebar-foreground/70">Gestion & Validation</p>
             </div>
-          </div>
+          )}
         </div>
+      </SidebarHeader>
 
-        <nav className="flex-1 px-3 space-y-1">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant={isActive(item.path) ? "default" : "ghost"}
-              className={`w-full justify-start gap-3 ${
-                isActive(item.path)
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}
-              onClick={() => navigate(item.path)}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Button>
-          ))}
-        </nav>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton asChild isActive={isActive(item.path)}>
+                    <NavLink to={item.path}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center">
-              <User className="h-4 w-4 text-sidebar-primary-foreground" />
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="flex items-center gap-3 px-2 py-2">
+              <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center">
+                <User className="h-4 w-4 text-sidebar-primary-foreground" />
+              </div>
+              {open && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.email}</p>
+                </div>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.email}</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent"
-            onClick={signOut}
-          >
-            <LogOut className="h-5 w-5" />
-            Déconnexion
-          </Button>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={signOut}>
+              <LogOut />
+              <span>Déconnexion</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+export default function Layout({ children }: LayoutProps) {
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 border-b flex items-center px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+            <SidebarTrigger />
+          </header>
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }

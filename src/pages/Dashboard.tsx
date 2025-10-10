@@ -73,75 +73,93 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="p-8 space-y-8">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Tableau de bord</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
+              Tableau de bord
+            </h1>
             <p className="text-muted-foreground">
               Gérez vos bons de mission et suivez leur validation
             </p>
           </div>
-          <Button onClick={() => navigate("/new-mission")} size="lg" className="gap-2">
+          <Button onClick={() => navigate("/new-mission")} size="lg" className="gap-2 shadow-lg">
             <Plus className="h-5 w-5" />
             Nouveau bon de mission
           </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="relative overflow-hidden border-none shadow-lg bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-16 translate-x-16" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total
+              <CardTitle className="text-sm font-medium">
+                Total des missions
               </CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-3xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground mt-1">Toutes les missions</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="relative overflow-hidden border-none shadow-lg bg-gradient-to-br from-warning/10 via-warning/5 to-background">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-warning/10 rounded-full -translate-y-16 translate-x-16" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium">
                 En attente
               </CardTitle>
-              <Clock className="h-4 w-4 text-warning" />
+              <div className="h-10 w-10 rounded-lg bg-warning/20 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-warning" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-warning">{stats.pending}</div>
+              <div className="text-3xl font-bold text-warning">{stats.pending}</div>
+              <p className="text-xs text-muted-foreground mt-1">En cours de validation</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="relative overflow-hidden border-none shadow-lg bg-gradient-to-br from-success/10 via-success/5 to-background">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-success/10 rounded-full -translate-y-16 translate-x-16" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium">
                 Approuvés
               </CardTitle>
-              <CheckCircle className="h-4 w-4 text-success" />
+              <div className="h-10 w-10 rounded-lg bg-success/20 flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-success" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.approved}</div>
+              <div className="text-3xl font-bold text-success">{stats.approved}</div>
+              <p className="text-xs text-muted-foreground mt-1">Missions validées</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="relative overflow-hidden border-none shadow-lg bg-gradient-to-br from-destructive/10 via-destructive/5 to-background">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-destructive/10 rounded-full -translate-y-16 translate-x-16" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium">
                 Rejetés
               </CardTitle>
-              <XCircle className="h-4 w-4 text-destructive" />
+              <div className="h-10 w-10 rounded-lg bg-destructive/20 flex items-center justify-center">
+                <XCircle className="h-5 w-5 text-destructive" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.rejected}</div>
+              <div className="text-3xl font-bold text-destructive">{stats.rejected}</div>
+              <p className="text-xs text-muted-foreground mt-1">Missions refusées</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Missions List */}
-        <Card>
+        <Card className="shadow-lg border-none">
           <CardHeader>
-            <CardTitle>Bons de mission récents</CardTitle>
+            <CardTitle className="text-2xl">Bons de mission récents</CardTitle>
             <CardDescription>
               Liste de tous les bons de mission créés
             </CardDescription>
@@ -167,29 +185,29 @@ export default function Dashboard() {
                 {missions.map((mission) => (
                   <div
                     key={mission.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
+                    className="group relative flex items-center justify-between p-5 border rounded-xl hover:shadow-md cursor-pointer transition-all hover:border-primary/50 bg-card"
                     onClick={() => navigate(`/mission/${mission.id}`)}
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold">{mission.title}</h3>
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{mission.title}</h3>
                         <StatusBadge status={mission.status as any} />
                       </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <p>Référence: {mission.reference}</p>
-                        <p>Destination: {mission.destination}</p>
+                      <div className="text-sm text-muted-foreground space-y-1.5">
+                        <p className="font-medium text-foreground/80">Référence: {mission.reference}</p>
+                        <p>📍 {mission.destination}</p>
                         <p>
-                          Du {format(new Date(mission.start_date), "dd MMM yyyy", { locale: fr })} au{" "}
+                          📅 Du {format(new Date(mission.start_date), "dd MMM yyyy", { locale: fr })} au{" "}
                           {format(new Date(mission.end_date), "dd MMM yyyy", { locale: fr })}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-lg">
-                        {mission.estimated_amount.toLocaleString("fr-FR")} €
+                    <div className="text-right space-y-2">
+                      <p className="font-bold text-2xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        {mission.estimated_amount.toLocaleString("fr-FR")} XOF
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(mission.created_at), "dd MMM yyyy", { locale: fr })}
+                        Créé le {format(new Date(mission.created_at), "dd MMM yyyy", { locale: fr })}
                       </p>
                     </div>
                   </div>

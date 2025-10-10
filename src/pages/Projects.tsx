@@ -169,7 +169,7 @@ export default function Projects() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="total_budget">Budget total (FCFA) *</Label>
+                  <Label htmlFor="total_budget">Budget total (XOF) *</Label>
                   <Input
                     id="total_budget"
                     type="number"
@@ -272,7 +272,7 @@ export default function Projects() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Budget:</span>
                       <span className="font-semibold">
-                        {project.total_budget.toLocaleString()} FCFA
+                        {project.total_budget.toLocaleString()} XOF
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -283,7 +283,7 @@ export default function Projects() {
                           project.total_budget
                         )}`}
                       >
-                        {project.spent_budget.toLocaleString()} FCFA
+                        {project.spent_budget.toLocaleString()} XOF
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">

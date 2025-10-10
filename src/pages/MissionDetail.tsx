@@ -331,7 +331,7 @@ export default function MissionDetail() {
                 <div>
                   <h3 className="font-semibold mb-1">Montant estimé</h3>
                   <p className="text-muted-foreground">
-                    {mission.estimated_amount.toLocaleString("fr-FR")} €
+                    {mission.estimated_amount.toLocaleString("fr-FR")} XOF
                   </p>
                 </div>
               </div>

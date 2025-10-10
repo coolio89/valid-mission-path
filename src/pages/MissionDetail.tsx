@@ -7,11 +7,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, User, Download, Users } from "lucide-react";
+import { 
+  ArrowLeft, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  User, 
+  Download, 
+  Users, 
+  Edit, 
+  Trash2,
+  AlertCircle 
+} from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { generateMissionPDF } from "@/utils/missionPdf";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Mission {
   id: string;
@@ -264,6 +286,27 @@ export default function MissionDetail() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!mission || mission.status !== 'draft') {
+      toast.error("Seuls les bons en brouillon peuvent être supprimés");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("mission_orders")
+        .delete()
+        .eq("id", mission.id);
+
+      if (error) throw error;
+
+      toast.success("Bon de mission supprimé avec succès");
+      navigate("/");
+    } catch (error: any) {
+      toast.error("Erreur lors de la suppression: " + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -287,20 +330,58 @@ export default function MissionDetail() {
   return (
     <Layout>
       <div className="p-8 max-w-5xl mx-auto">
-        <div className="flex gap-2 mb-6">
+        <div className="flex justify-between items-center mb-6">
           <Button variant="ghost" onClick={() => navigate("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour au tableau de bord
           </Button>
-          {mission?.status !== 'draft' && expenses && (
-            <Button
-              onClick={() => generateMissionPDF(mission, expenses, missionAgents.map(ma => ma.profiles))}
-              variant="default"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Générer l'ordre de mission
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {mission?.status === 'draft' && mission?.agent_id === user?.id && (
+              <>
+                <Button
+                  onClick={() => navigate(`/new-mission?edit=${mission.id}`)}
+                  variant="outline"
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Modifier
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Supprimer
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                        Confirmer la suppression
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir supprimer ce bon de mission ? Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+            {mission?.status !== 'draft' && expenses && (
+              <Button
+                onClick={() => generateMissionPDF(mission, expenses, missionAgents.map(ma => ma.profiles))}
+                variant="default"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Générer l'ordre de mission
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">

@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Shield, UserPlus, Trash2 } from "lucide-react";
+import { Shield, UserPlus, Trash2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UserRole {
   id: string;
@@ -30,6 +31,8 @@ export default function Admin() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -97,18 +100,38 @@ export default function Admin() {
     }
   };
 
-  const addRole = async (userId: string, role: string) => {
+  const addRole = async () => {
+    if (!selectedUser || !selectedRole) {
+      toast.error("Veuillez sélectionner un utilisateur et un rôle");
+      return;
+    }
+
     try {
+      // Check if user already has this role
+      const { data: existingRole } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", selectedUser)
+        .eq("role", selectedRole as any)
+        .maybeSingle();
+
+      if (existingRole) {
+        toast.error("L'utilisateur a déjà ce rôle");
+        return;
+      }
+
       const { error } = await supabase
         .from("user_roles")
         .insert([{ 
-          user_id: userId, 
-          role: role as "admin" | "agent" | "chef_service" | "directeur" | "finance"
+          user_id: selectedUser, 
+          role: selectedRole as any
         }]);
 
       if (error) throw error;
 
       toast.success("Rôle ajouté avec succès");
+      setSelectedUser("");
+      setSelectedRole("");
       fetchData();
     } catch (error: any) {
       toast.error(error.message);
@@ -164,58 +187,85 @@ export default function Admin() {
           </p>
         </div>
 
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Guide des rôles:</strong>
+            <ul className="mt-2 space-y-1 text-sm">
+              <li>• <strong>Agent</strong>: Peut créer des bons de mission</li>
+              <li>• <strong>Chef de Service</strong>: Valide les bons après création</li>
+              <li>• <strong>Directeur</strong>: Valide après le chef de service</li>
+              <li>• <strong>Finance</strong>: Validation finale avant paiement</li>
+              <li>• <strong>Admin</strong>: Accès complet à l'administration</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+
         {/* Add Role Section */}
-        <Card className="mb-6">
+        <Card className="mb-6 shadow-lg border-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Ajouter un rôle
+              Attribuer un rôle
             </CardTitle>
             <CardDescription>
-              Attribuez un rôle à un utilisateur
+              Sélectionnez un utilisateur et attribuez-lui un rôle
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <Select onValueChange={(userId) => {
-                const profileId = userId;
-                const role = (document.getElementById('role-select') as HTMLSelectElement)?.value;
-                if (role) addRole(profileId, role);
-              }}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Sélectionner un utilisateur" />
-                </SelectTrigger>
-                <SelectContent>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.id} value={profile.id}>
-                      {profile.full_name} ({profile.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Utilisateur</label>
+                  <Select value={selectedUser} onValueChange={setSelectedUser}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un utilisateur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((profile) => (
+                        <SelectItem key={profile.id} value={profile.id}>
+                          {profile.full_name} ({profile.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Select>
-                <SelectTrigger id="role-select" className="w-64">
-                  <SelectValue placeholder="Sélectionner un rôle" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="agent">Agent</SelectItem>
-                  <SelectItem value="chef_service">Chef de Service</SelectItem>
-                  <SelectItem value="directeur">Directeur</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="admin">Administrateur</SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Rôle</label>
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un rôle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="agent">Agent</SelectItem>
+                      <SelectItem value="chef_service">Chef de Service</SelectItem>
+                      <SelectItem value="directeur">Directeur</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="admin">Administrateur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button 
+                onClick={addRole} 
+                className="w-full"
+                disabled={!selectedUser || !selectedRole}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Attribuer le rôle
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Users List */}
-        <Card>
+        <Card className="shadow-lg border-none">
           <CardHeader>
-            <CardTitle>Utilisateurs et rôles</CardTitle>
+            <CardTitle>Utilisateurs et rôles attribués</CardTitle>
             <CardDescription>
-              Liste de tous les utilisateurs et leurs rôles attribués
+              Gérez les rôles de chaque utilisateur - Cliquez sur la corbeille pour supprimer un rôle
             </CardDescription>
           </CardHeader>
           <CardContent>

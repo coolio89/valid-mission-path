@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export default function NewMission() {
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditing = !!editId;
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -52,8 +55,83 @@ export default function NewMission() {
 
   useEffect(() => {
     loadProjectsAndAgents();
-    loadDefaultRates();
-  }, [user]);
+    if (isEditing) {
+      loadMissionData();
+    } else {
+      loadDefaultRates();
+    }
+  }, [user, editId]);
+
+  const loadMissionData = async () => {
+    if (!editId) return;
+    
+    try {
+      setLoading(true);
+      
+      // Load mission data
+      const { data: missionData, error: missionError } = await supabase
+        .from("mission_orders")
+        .select("*")
+        .eq("id", editId)
+        .single();
+
+      if (missionError) throw missionError;
+
+      // Check if user is owner and status is draft
+      if (missionData.agent_id !== user?.id || missionData.status !== 'draft') {
+        toast.error("Vous ne pouvez pas modifier cette mission");
+        navigate("/");
+        return;
+      }
+
+      setFormData({
+        title: missionData.title,
+        description: missionData.description || "",
+        destination: missionData.destination,
+        start_date: missionData.start_date,
+        end_date: missionData.end_date,
+        project_id: missionData.project_id || "",
+      });
+
+      // Load expenses
+      const { data: expensesData } = await supabase
+        .from("mission_expenses")
+        .select("*")
+        .eq("mission_id", editId)
+        .maybeSingle();
+
+      if (expensesData) {
+        setExpenses({
+          accommodation_days: expensesData.accommodation_days.toString(),
+          accommodation_unit_price: expensesData.accommodation_unit_price.toString(),
+          per_diem_days: expensesData.per_diem_days.toString(),
+          per_diem_rate: expensesData.per_diem_rate.toString(),
+          transport_type: expensesData.transport_type || "",
+          transport_distance: expensesData.transport_distance.toString(),
+          transport_unit_price: expensesData.transport_unit_price.toString(),
+          fuel_quantity: expensesData.fuel_quantity.toString(),
+          fuel_unit_price: expensesData.fuel_unit_price.toString(),
+          other_expenses: expensesData.other_expenses.toString(),
+          other_expenses_description: expensesData.other_expenses_description || "",
+        });
+      }
+
+      // Load mission agents
+      const { data: agentsData } = await supabase
+        .from("mission_agents")
+        .select("agent_id")
+        .eq("mission_id", editId);
+
+      if (agentsData) {
+        setSelectedAgents(agentsData.map(a => a.agent_id));
+      }
+    } catch (error: any) {
+      toast.error("Erreur lors du chargement de la mission");
+      navigate("/");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadProjectsAndAgents = async () => {
     try {

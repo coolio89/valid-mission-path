@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
+import MissionFilters from "@/components/MissionFilters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Plus, FileText, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import StatusBadge from "@/components/StatusBadge";
 import { format } from "date-fns";
@@ -25,12 +26,16 @@ interface MissionOrder {
 
 export default function Dashboard() {
   const [missions, setMissions] = useState<MissionOrder[]>([]);
+  const [filteredMissions, setFilteredMissions] = useState<MissionOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     approved: 0,
     rejected: 0,
+    totalAmount: 0,
   });
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -40,6 +45,37 @@ export default function Dashboard() {
       fetchMissions();
     }
   }, [user]);
+
+  useEffect(() => {
+    filterMissions();
+  }, [missions, statusFilter, searchQuery]);
+
+  const filterMissions = () => {
+    let filtered = [...missions];
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      if (statusFilter === "pending") {
+        filtered = filtered.filter(m =>
+          ['pending_service', 'pending_director', 'pending_finance'].includes(m.status)
+        );
+      } else {
+        filtered = filtered.filter(m => m.status === statusFilter);
+      }
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(m =>
+        m.title.toLowerCase().includes(query) ||
+        m.reference.toLowerCase().includes(query) ||
+        m.destination.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredMissions(filtered);
+  };
 
   const fetchMissions = async () => {
     try {
@@ -62,8 +98,9 @@ export default function Dashboard() {
         ['approved', 'paid'].includes(m.status)
       ).length || 0;
       const rejected = data?.filter(m => m.status === 'rejected').length || 0;
+      const totalAmount = data?.reduce((sum, m) => sum + m.estimated_amount, 0) || 0;
       
-      setStats({ total, pending, approved, rejected });
+      setStats({ total, pending, approved, rejected, totalAmount });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -154,7 +191,31 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground mt-1">Missions refusées</p>
             </CardContent>
           </Card>
+
+          <Card className="relative overflow-hidden border-none shadow-lg bg-gradient-to-br from-accent/10 via-accent/5 to-background">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -translate-y-16 translate-x-16" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Montant total
+              </CardTitle>
+              <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-accent-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.totalAmount.toLocaleString()} XOF</div>
+              <p className="text-xs text-muted-foreground mt-1">Toutes missions confondues</p>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Filters */}
+        <MissionFilters
+          statusFilter={statusFilter}
+          searchQuery={searchQuery}
+          onStatusChange={setStatusFilter}
+          onSearchChange={setSearchQuery}
+        />
 
         {/* Missions List */}
         <Card className="shadow-lg border-none">
@@ -169,20 +230,24 @@ export default function Dashboard() {
               <div className="text-center py-8 text-muted-foreground">
                 Chargement...
               </div>
-            ) : missions.length === 0 ? (
+            ) : filteredMissions.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">
-                  Aucun bon de mission créé pour le moment
+                  {searchQuery || statusFilter !== "all" 
+                    ? "Aucun bon de mission ne correspond à votre recherche"
+                    : "Aucun bon de mission créé pour le moment"}
                 </p>
-                <Button onClick={() => navigate("/new-mission")}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Créer votre premier bon
-                </Button>
+                {!searchQuery && statusFilter === "all" && (
+                  <Button onClick={() => navigate("/new-mission")}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Créer votre premier bon
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
-                {missions.map((mission) => (
+                {filteredMissions.map((mission) => (
                   <div
                     key={mission.id}
                     className="group relative flex items-center justify-between p-5 border rounded-xl hover:shadow-md cursor-pointer transition-all hover:border-primary/50 bg-card"

@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Home, Plus, LogOut, User, Shield, FolderOpen } from "lucide-react";
+import { FileText, Home, Plus, LogOut, User, Shield, FolderOpen, BarChart3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -52,6 +52,7 @@ function AppSidebar() {
 
   const navItems = [
     { icon: Home, label: "Tableau de bord", path: "/" },
+    { icon: BarChart3, label: "Analyse Financière", path: "/analytics" },
     { icon: Plus, label: "Nouveau bon", path: "/new-mission" },
     { icon: FolderOpen, label: "Projets", path: "/projects" },
     { icon: User, label: "Profil", path: "/profile" },

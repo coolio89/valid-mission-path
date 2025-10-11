@@ -61,7 +61,7 @@ function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar collapsible="icon" className="data-[state=collapsed]:w-20">
+    <Sidebar collapsible="icon" className="data-[state=collapsed]:w-[120px]">
       <SidebarHeader>
         <div className="flex items-center gap-3 p-2">
           <div className="h-10 w-10 rounded-lg bg-sidebar-primary flex items-center justify-center">

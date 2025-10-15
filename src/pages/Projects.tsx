@@ -110,32 +110,38 @@ export default function Projects() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Gestion des Projets</h1>
-            <p className="text-muted-foreground">
-              Gérez les projets et suivez leurs budgets
+      <div className="p-8 space-y-8 animate-fade-in">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold flex items-center gap-3">
+              <FolderOpen className="h-10 w-10 text-primary" />
+              Gestion des Projets
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Gérez les projets et suivez leurs budgets en temps réel
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button size="lg" className="h-12 px-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <Plus className="mr-2 h-5 w-5" />
                 Nouveau Projet
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Créer un nouveau projet</DialogTitle>
-                <DialogDescription>
-                  Ajoutez un nouveau projet avec son budget
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
+              <DialogHeader className="space-y-3 pb-4">
+                <DialogTitle className="text-2xl flex items-center gap-2">
+                  <Plus className="h-6 w-6 text-primary" />
+                  Créer un nouveau projet
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  Ajoutez un nouveau projet avec son budget et ses informations
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nom du projet *</Label>
+                    <Label htmlFor="name" className="text-sm font-semibold">Nom du projet *</Label>
                     <Input
                       id="name"
                       value={formData.name}
@@ -143,10 +149,12 @@ export default function Projects() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       required
+                      className="h-11"
+                      placeholder="Ex: Développement App Mobile"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="code">Code du projet *</Label>
+                    <Label htmlFor="code" className="text-sm font-semibold">Code du projet *</Label>
                     <Input
                       id="code"
                       value={formData.code}
@@ -154,22 +162,29 @@ export default function Projects() {
                         setFormData({ ...formData, code: e.target.value })
                       }
                       required
+                      className="h-11 font-mono"
+                      placeholder="Ex: PROJ-2024-001"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    rows={3}
+                    rows={4}
+                    className="resize-none"
+                    placeholder="Décrivez le projet en quelques mots..."
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="total_budget">Budget total (XOF) *</Label>
+                  <Label htmlFor="total_budget" className="text-sm font-semibold flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Budget total (XOF) *
+                  </Label>
                   <Input
                     id="total_budget"
                     type="number"
@@ -178,11 +193,18 @@ export default function Projects() {
                       setFormData({ ...formData, total_budget: e.target.value })
                     }
                     required
+                    className="h-11"
+                    placeholder="Ex: 5000000"
+                    min="0"
+                    step="1000"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="start_date">Date de début</Label>
+                    <Label htmlFor="start_date" className="text-sm font-semibold flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Date de début
+                    </Label>
                     <Input
                       id="start_date"
                       type="date"
@@ -190,10 +212,14 @@ export default function Projects() {
                       onChange={(e) =>
                         setFormData({ ...formData, start_date: e.target.value })
                       }
+                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="end_date">Date de fin</Label>
+                    <Label htmlFor="end_date" className="text-sm font-semibold flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Date de fin
+                    </Label>
                     <Input
                       id="end_date"
                       type="date"
@@ -201,18 +227,19 @@ export default function Projects() {
                       onChange={(e) =>
                         setFormData({ ...formData, end_date: e.target.value })
                       }
+                      className="h-11"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Statut</Label>
+                  <Label htmlFor="status" className="text-sm font-semibold">Statut</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) =>
                       setFormData({ ...formData, status: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -222,7 +249,8 @@ export default function Projects() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                  <Plus className="mr-2 h-5 w-5" />
                   Créer le projet
                 </Button>
               </form>
@@ -231,24 +259,52 @@ export default function Projects() {
         </div>
 
         {loading ? (
-          <p>Chargement...</p>
+          <div className="flex items-center justify-center py-20">
+            <div className="space-y-4 text-center">
+              <div className="h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-muted-foreground">Chargement des projets...</p>
+            </div>
+          </div>
+        ) : projects.length === 0 ? (
+          <Card className="p-12 text-center animate-fade-in">
+            <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Aucun projet</h3>
+            <p className="text-muted-foreground mb-6">
+              Commencez par créer votre premier projet
+            </p>
+            <Button onClick={() => setIsOpen(true)} size="lg" className="shadow-lg">
+              <Plus className="mr-2 h-5 w-5" />
+              Créer un projet
+            </Button>
+          </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <Card key={project.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <FolderOpen className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
+            {projects.map((project, index) => (
+              <Card 
+                key={project.id} 
+                className="group hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2 hover:border-primary/50 animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <CardHeader className="pb-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                        <FolderOpen className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-xl truncate">{project.name}</CardTitle>
+                        <CardDescription className="font-mono text-xs mt-1">
+                          {project.code}
+                        </CardDescription>
+                      </div>
                     </div>
                     <span
-                      className={`text-xs px-2 py-1 rounded ${
+                      className={`text-xs px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all ${
                         project.status === "active"
-                          ? "bg-success/10 text-success"
+                          ? "bg-success/10 text-success ring-1 ring-success/20"
                           : project.status === "completed"
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-warning/10 text-warning"
+                          ? "bg-muted text-muted-foreground ring-1 ring-border"
+                          : "bg-warning/10 text-warning ring-1 ring-warning/20"
                       }`}
                     >
                       {project.status === "active"
@@ -258,27 +314,30 @@ export default function Projects() {
                         : "Suspendu"}
                     </span>
                   </div>
-                  <CardDescription className="font-mono text-xs">
-                    {project.code}
-                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-5 pt-0">
                   {project.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed p-3 bg-muted/30 rounded-lg">
                       {project.description}
                     </p>
                   )}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Budget:</span>
-                      <span className="font-semibold">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-sm p-3 bg-background rounded-lg border">
+                      <span className="text-muted-foreground flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Budget total:
+                      </span>
+                      <span className="font-bold text-base">
                         {project.total_budget.toLocaleString()} XOF
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Dépensé:</span>
+                    <div className="flex items-center justify-between text-sm p-3 bg-background rounded-lg border">
+                      <span className="text-muted-foreground flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Dépensé:
+                      </span>
                       <span
-                        className={`font-semibold ${getBudgetColor(
+                        className={`font-bold text-base ${getBudgetColor(
                           project.spent_budget,
                           project.total_budget
                         )}`}
@@ -286,29 +345,51 @@ export default function Projects() {
                         {project.spent_budget.toLocaleString()} XOF
                       </span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          (project.spent_budget / project.total_budget) * 100 >= 90
-                            ? "bg-destructive"
-                            : (project.spent_budget / project.total_budget) * 100 >= 70
-                            ? "bg-warning"
-                            : "bg-success"
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            (project.spent_budget / project.total_budget) * 100,
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Progression</span>
+                        <span className="font-semibold">
+                          {Math.min(
+                            Math.round((project.spent_budget / project.total_budget) * 100),
                             100
-                          )}%`,
-                        }}
-                      />
+                          )}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-3 overflow-hidden shadow-inner">
+                        <div
+                          className={`h-3 rounded-full transition-all duration-500 ease-out shadow-sm ${
+                            (project.spent_budget / project.total_budget) * 100 >= 90
+                              ? "bg-gradient-to-r from-destructive to-destructive/80"
+                              : (project.spent_budget / project.total_budget) * 100 >= 70
+                              ? "bg-gradient-to-r from-warning to-warning/80"
+                              : "bg-gradient-to-r from-success to-success/80"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              (project.spent_budget / project.total_budget) * 100,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Restant</span>
+                        <span className="font-semibold">
+                          {Math.max(
+                            project.total_budget - project.spent_budget,
+                            0
+                          ).toLocaleString()} XOF
+                        </span>
+                      </div>
                     </div>
                   </div>
                   {project.start_date && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(project.start_date), "dd/MM/yyyy")}
-                      {project.end_date && ` - ${format(new Date(project.end_date), "dd/MM/yyyy")}`}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
+                      <Calendar className="h-4 w-4 flex-shrink-0" />
+                      <span className="font-medium">
+                        {format(new Date(project.start_date), "dd/MM/yyyy")}
+                        {project.end_date && ` → ${format(new Date(project.end_date), "dd/MM/yyyy")}`}
+                      </span>
                     </div>
                   )}
                 </CardContent>

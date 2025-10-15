@@ -13,10 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
 interface LayoutProps {
@@ -26,7 +24,6 @@ interface LayoutProps {
 function AppSidebar() {
   const { user, signOut } = useAuth();
   const location = useLocation();
-  const { open } = useSidebar();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -62,31 +59,31 @@ function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar collapsible="icon" className="data-[state=collapsed]:w-[120px]">
+    <Sidebar collapsible="none" className="w-64">
       <SidebarHeader>
-        <div className="flex items-center gap-3 p-2">
-          <div className="h-10 w-10 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <FileText className="h-5 w-5 text-sidebar-primary-foreground" />
+        <div className="flex items-center gap-3 p-4">
+          <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+            <FileText className="h-6 w-6 text-primary-foreground" />
           </div>
-          {open && (
-            <div>
-              <h1 className="font-bold text-lg">Bons de Mission</h1>
-              <p className="text-xs text-sidebar-foreground/70">Gestion & Validation</p>
-            </div>
-          )}
+          <div>
+            <h1 className="font-bold text-xl">Bons de Mission</h1>
+            <p className="text-xs text-sidebar-foreground/70">Gestion & Validation</p>
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild isActive={isActive(item.path)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.path)} className="h-12 text-base">
                     <NavLink to={item.path}>
-                      <item.icon />
+                      <item.icon className="h-5 w-5" />
                       <span>{item.label}</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -97,23 +94,21 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
+      <SidebarFooter className="p-4 border-t border-sidebar-border">
+        <SidebarMenu className="space-y-2">
           <SidebarMenuItem>
-            <div className="flex items-center gap-3 px-2 py-2">
-              <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center">
-                <User className="h-4 w-4 text-sidebar-primary-foreground" />
+            <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-sidebar-accent/50">
+              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                <User className="h-5 w-5 text-primary-foreground" />
               </div>
-              {open && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user?.email}</p>
-                </div>
-              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.email}</p>
+              </div>
             </div>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={signOut}>
-              <LogOut />
+            <SidebarMenuButton onClick={signOut} className="h-12 text-base">
+              <LogOut className="h-5 w-5" />
               <span>Déconnexion</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -125,13 +120,10 @@ function AppSidebar() {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b flex items-center px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-            <SidebarTrigger />
-          </header>
           <main className="flex-1 overflow-auto">
             {children}
           </main>

@@ -31,6 +31,8 @@ export default function NewMission() {
     start_date: "",
     end_date: "",
     project_id: "",
+    payment_method: "",
+    payment_proof_url: "",
   });
   
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
@@ -91,6 +93,8 @@ export default function NewMission() {
         start_date: missionData.start_date,
         end_date: missionData.end_date,
         project_id: missionData.project_id || "",
+        payment_method: missionData.payment_method || "",
+        payment_proof_url: missionData.payment_proof_url || "",
       });
 
       // Load expenses
@@ -201,6 +205,24 @@ export default function NewMission() {
     setLoading(true);
 
     try {
+      // Check for duplicates
+      const { data: existingMissions, error: checkError } = await supabase
+        .from("mission_orders")
+        .select("id, reference")
+        .eq("title", formData.title)
+        .eq("destination", formData.destination)
+        .eq("start_date", formData.start_date);
+      
+      if (checkError) throw checkError;
+      
+      if (existingMissions && existingMissions.length > 0 && !isEditing) {
+        const isDuplicate = existingMissions.some(m => m.id !== editId);
+        if (isDuplicate) {
+          toast.error("Une mission similaire existe déjà (même titre, destination et date)");
+          setLoading(false);
+          return;
+        }
+      }
       // Get user profile
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -218,7 +240,71 @@ export default function NewMission() {
 
       const estimatedAmount = calculateTotal();
 
-      // Create mission
+      if (isEditing) {
+        // Update existing mission
+        const { error: updateError } = await supabase
+          .from("mission_orders")
+          .update({
+            title: formData.title,
+            description: formData.description,
+            destination: formData.destination,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            estimated_amount: estimatedAmount,
+            project_id: formData.project_id || null,
+            payment_method: formData.payment_method || null,
+            payment_proof_url: formData.payment_proof_url || null,
+            status: submitType === "draft" ? "draft" : "pending_service",
+          })
+          .eq("id", editId);
+
+        if (updateError) throw updateError;
+
+        // Delete old agents
+        await supabase
+          .from("mission_agents")
+          .delete()
+          .eq("mission_id", editId);
+
+        // Insert new agents
+        const missionAgentsInserts = selectedAgents.map((agentId, index) => ({
+          mission_id: editId,
+          agent_id: agentId,
+          is_primary: index === 0,
+        }));
+        
+        await supabase
+          .from("mission_agents")
+          .insert(missionAgentsInserts);
+
+        // Update expenses
+        await supabase
+          .from("mission_expenses")
+          .update({
+            accommodation_days: parseInt(expenses.accommodation_days) || 0,
+            accommodation_unit_price: parseFloat(expenses.accommodation_unit_price) || 0,
+            per_diem_days: parseInt(expenses.per_diem_days) || 0,
+            per_diem_rate: parseFloat(expenses.per_diem_rate) || 0,
+            transport_type: expenses.transport_type || null,
+            transport_distance: parseFloat(expenses.transport_distance) || 0,
+            transport_unit_price: parseFloat(expenses.transport_unit_price) || 0,
+            fuel_quantity: parseFloat(expenses.fuel_quantity) || 0,
+            fuel_unit_price: parseFloat(expenses.fuel_unit_price) || 0,
+            other_expenses: parseFloat(expenses.other_expenses) || 0,
+            other_expenses_description: expenses.other_expenses_description || null,
+            accommodation_total: (parseInt(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0),
+            per_diem_total: (parseInt(expenses.per_diem_days) || 0) * (parseFloat(expenses.per_diem_rate) || 0),
+            transport_total: (parseFloat(expenses.transport_distance) || 0) * (parseFloat(expenses.transport_unit_price) || 0),
+            fuel_total: (parseFloat(expenses.fuel_quantity) || 0) * (parseFloat(expenses.fuel_unit_price) || 0),
+          })
+          .eq("mission_id", editId);
+
+        toast.success("Mission modifiée avec succès!");
+        navigate("/");
+        return;
+      }
+
+      // Create new mission
       const { data: missionData, error: missionError } = await supabase
         .from("mission_orders")
         .insert({
@@ -231,6 +317,8 @@ export default function NewMission() {
           end_date: formData.end_date,
           estimated_amount: estimatedAmount,
           project_id: formData.project_id || null,
+          payment_method: formData.payment_method || null,
+          payment_proof_url: formData.payment_proof_url || null,
           status: submitType === "draft" ? "draft" : "pending_service",
         })
         .select()
@@ -314,9 +402,9 @@ export default function NewMission() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Nouveau bon de mission</CardTitle>
+            <CardTitle>{isEditing ? "Modifier le bon de mission" : "Nouveau bon de mission"}</CardTitle>
             <CardDescription>
-              Créez un nouveau bon de mission qui sera soumis au workflow de validation
+              {isEditing ? "Modifiez les détails de votre bon de mission" : "Créez un nouveau bon de mission qui sera soumis au workflow de validation"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -449,7 +537,7 @@ export default function NewMission() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="accommodation_unit_price">Prix par nuit (€)</Label>
+                    <Label htmlFor="accommodation_unit_price">Prix par nuit (XOF)</Label>
                     <Input
                       id="accommodation_unit_price"
                       name="accommodation_unit_price"
@@ -463,7 +551,7 @@ export default function NewMission() {
                 </div>
                 {expenses.accommodation_days && expenses.accommodation_unit_price && (
                   <p className="text-sm text-muted-foreground">
-                    Total hébergement: {((parseFloat(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0)).toFixed(2)} €
+                    Total hébergement: {((parseFloat(expenses.accommodation_days) || 0) * (parseFloat(expenses.accommodation_unit_price) || 0)).toLocaleString()} XOF
                   </p>
                 )}
               </div>
@@ -484,7 +572,7 @@ export default function NewMission() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="per_diem_rate">Taux journalier (€)</Label>
+                    <Label htmlFor="per_diem_rate">Taux journalier (XOF)</Label>
                     <Input
                       id="per_diem_rate"
                       name="per_diem_rate"
@@ -498,7 +586,7 @@ export default function NewMission() {
                 </div>
                 {expenses.per_diem_days && expenses.per_diem_rate && (
                   <p className="text-sm text-muted-foreground">
-                    Total indemnités: {((parseFloat(expenses.per_diem_days) || 0) * (parseFloat(expenses.per_diem_rate) || 0)).toFixed(2)} €
+                    Total indemnités: {((parseFloat(expenses.per_diem_days) || 0) * (parseFloat(expenses.per_diem_rate) || 0)).toLocaleString()} XOF
                   </p>
                 )}
               </div>
@@ -530,7 +618,7 @@ export default function NewMission() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="transport_unit_price">Prix/km (€)</Label>
+                    <Label htmlFor="transport_unit_price">Prix/km (XOF)</Label>
                     <Input
                       id="transport_unit_price"
                       name="transport_unit_price"
@@ -544,7 +632,7 @@ export default function NewMission() {
                 </div>
                 {expenses.transport_distance && expenses.transport_unit_price && (
                   <p className="text-sm text-muted-foreground">
-                    Total transport: {((parseFloat(expenses.transport_distance) || 0) * (parseFloat(expenses.transport_unit_price) || 0)).toFixed(2)} €
+                    Total transport: {((parseFloat(expenses.transport_distance) || 0) * (parseFloat(expenses.transport_unit_price) || 0)).toLocaleString()} XOF
                   </p>
                 )}
               </div>
@@ -566,7 +654,7 @@ export default function NewMission() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fuel_unit_price">Prix/litre (€)</Label>
+                    <Label htmlFor="fuel_unit_price">Prix/litre (XOF)</Label>
                     <Input
                       id="fuel_unit_price"
                       name="fuel_unit_price"
@@ -580,7 +668,7 @@ export default function NewMission() {
                 </div>
                 {expenses.fuel_quantity && expenses.fuel_unit_price && (
                   <p className="text-sm text-muted-foreground">
-                    Total carburant: {((parseFloat(expenses.fuel_quantity) || 0) * (parseFloat(expenses.fuel_unit_price) || 0)).toFixed(2)} €
+                    Total carburant: {((parseFloat(expenses.fuel_quantity) || 0) * (parseFloat(expenses.fuel_unit_price) || 0)).toLocaleString()} XOF
                   </p>
                 )}
               </div>
@@ -589,7 +677,7 @@ export default function NewMission() {
               <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                 <h3 className="font-semibold text-sm">Autres frais</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="other_expenses">Montant (€)</Label>
+                  <Label htmlFor="other_expenses">Montant (XOF)</Label>
                   <Input
                     id="other_expenses"
                     name="other_expenses"
@@ -613,12 +701,48 @@ export default function NewMission() {
                 </div>
               </div>
 
+              {/* Payment Method */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold text-sm">Informations de paiement</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_method">Moyen de paiement</Label>
+                    <Select
+                      value={formData.payment_method}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, payment_method: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="especes">Espèces</SelectItem>
+                        <SelectItem value="virement">Virement bancaire</SelectItem>
+                        <SelectItem value="cheque">Chèque</SelectItem>
+                        <SelectItem value="carte">Carte bancaire</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_proof_url">Preuve de paiement (URL)</Label>
+                    <Input
+                      id="payment_proof_url"
+                      name="payment_proof_url"
+                      value={formData.payment_proof_url}
+                      onChange={handleChange}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Total */}
               <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">Montant total estimé</span>
                   <span className="text-2xl font-bold text-primary">
-                    {calculateTotal().toFixed(2)} €
+                    {calculateTotal().toLocaleString()} XOF
                   </span>
                 </div>
               </div>
@@ -631,6 +755,7 @@ export default function NewMission() {
                   disabled={loading}
                   className="flex-1"
                 >
+                  <Save className="mr-2 h-4 w-4" />
                   Enregistrer en brouillon
                 </Button>
                 <Button

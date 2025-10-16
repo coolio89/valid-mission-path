@@ -177,6 +177,8 @@ export type Database = {
           estimated_amount: number
           id: string
           payment_date: string | null
+          payment_method: string | null
+          payment_proof_url: string | null
           project_id: string | null
           reference: string
           rejection_reason: string | null
@@ -195,6 +197,8 @@ export type Database = {
           estimated_amount: number
           id?: string
           payment_date?: string | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
           project_id?: string | null
           reference: string
           rejection_reason?: string | null
@@ -213,6 +217,8 @@ export type Database = {
           estimated_amount?: number
           id?: string
           payment_date?: string | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
           project_id?: string | null
           reference?: string
           rejection_reason?: string | null
@@ -279,6 +285,47 @@ export type Database = {
             columns: ["signer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          mission_id: string | null
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          mission_id?: string | null
+          read?: boolean | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          mission_id?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "mission_orders"
             referencedColumns: ["id"]
           },
         ]

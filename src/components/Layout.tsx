@@ -3,6 +3,7 @@ import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Home, Plus, LogOut, User, Shield, FolderOpen, BarChart3 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import {
   Sidebar,
   SidebarContent,
@@ -124,6 +125,9 @@ export default function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
+          <header className="border-b bg-card px-6 py-4 flex items-center justify-end shadow-sm">
+            <NotificationBell />
+          </header>
           <main className="flex-1 overflow-auto">
             {children}
           </main>

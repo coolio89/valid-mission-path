@@ -49,6 +49,8 @@ interface Mission {
   rejection_reason: string | null;
   created_at: string;
   agent_id: string;
+  payment_method: string | null;
+  payment_proof_url: string | null;
 }
 
 interface MissionExpense {
@@ -466,6 +468,33 @@ export default function MissionDetail() {
                   <p className="text-sm">{mission.rejection_reason}</p>
                 </div>
               )}
+
+              {(mission.payment_method || mission.payment_proof_url) && (
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h3 className="font-semibold mb-3">Informations de paiement</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {mission.payment_method && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Moyen de paiement</p>
+                        <p className="capitalize">{mission.payment_method.replace('_', ' ')}</p>
+                      </div>
+                    )}
+                    {mission.payment_proof_url && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Preuve de paiement</p>
+                        <a 
+                          href={mission.payment_proof_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm"
+                        >
+                          Voir le document
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -484,10 +513,10 @@ export default function MissionDetail() {
                     <div>
                       <p className="font-semibold">Hébergement</p>
                       <p className="text-sm text-muted-foreground">
-                        {expenses.accommodation_days} nuits × {expenses.accommodation_unit_price.toFixed(2)} €
+                        {expenses.accommodation_days} nuits × {expenses.accommodation_unit_price.toLocaleString()} XOF
                       </p>
                     </div>
-                    <p className="font-semibold">{expenses.accommodation_total.toFixed(2)} €</p>
+                    <p className="font-semibold">{expenses.accommodation_total.toLocaleString()} XOF</p>
                   </div>
                 )}
 
@@ -496,10 +525,10 @@ export default function MissionDetail() {
                     <div>
                       <p className="font-semibold">Indemnités journalières</p>
                       <p className="text-sm text-muted-foreground">
-                        {expenses.per_diem_days} jours × {expenses.per_diem_rate.toFixed(2)} €
+                        {expenses.per_diem_days} jours × {expenses.per_diem_rate.toLocaleString()} XOF
                       </p>
                     </div>
-                    <p className="font-semibold">{expenses.per_diem_total.toFixed(2)} €</p>
+                    <p className="font-semibold">{expenses.per_diem_total.toLocaleString()} XOF</p>
                   </div>
                 )}
 
@@ -509,10 +538,10 @@ export default function MissionDetail() {
                       <p className="font-semibold">Transport</p>
                       <p className="text-sm text-muted-foreground">
                         {expenses.transport_type && `${expenses.transport_type} - `}
-                        {expenses.transport_distance} km × {expenses.transport_unit_price.toFixed(2)} €
+                        {expenses.transport_distance} km × {expenses.transport_unit_price.toLocaleString()} XOF
                       </p>
                     </div>
-                    <p className="font-semibold">{expenses.transport_total.toFixed(2)} €</p>
+                    <p className="font-semibold">{expenses.transport_total.toLocaleString()} XOF</p>
                   </div>
                 )}
 
@@ -521,10 +550,10 @@ export default function MissionDetail() {
                     <div>
                       <p className="font-semibold">Carburant</p>
                       <p className="text-sm text-muted-foreground">
-                        {expenses.fuel_quantity} L × {expenses.fuel_unit_price.toFixed(2)} €
+                        {expenses.fuel_quantity} L × {expenses.fuel_unit_price.toLocaleString()} XOF
                       </p>
                     </div>
-                    <p className="font-semibold">{expenses.fuel_total.toFixed(2)} €</p>
+                    <p className="font-semibold">{expenses.fuel_total.toLocaleString()} XOF</p>
                   </div>
                 )}
 
@@ -538,7 +567,7 @@ export default function MissionDetail() {
                         </p>
                       )}
                     </div>
-                    <p className="font-semibold">{expenses.other_expenses.toFixed(2)} €</p>
+                    <p className="font-semibold">{expenses.other_expenses.toLocaleString()} XOF</p>
                   </div>
                 )}
 
@@ -546,7 +575,7 @@ export default function MissionDetail() {
                   <div className="flex items-center justify-between">
                     <p className="text-lg font-bold">Total</p>
                     <p className="text-xl font-bold text-primary">
-                      {mission.estimated_amount.toFixed(2)} €
+                      {mission.estimated_amount.toLocaleString()} XOF
                     </p>
                   </div>
                 </div>
